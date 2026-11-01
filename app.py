@@ -1,16 +1,27 @@
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import json
 import os
 from datetime import datetime, date
 
 app = Flask(__name__)
 
-# JSON file used for storing course information
-DATA_FILE = "courses.json"
+# Enable CORS for frontend-backend communication
+CORS(app, resources={
+    r"/api/*": {"origins": "*"}
+})
+
+# JSON file location
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE_DIR, "courses.json")
 
 # Allowed course statuses
-VALID_STATUSES = ["Not Started", "In Progress", "Completed"]
+VALID_STATUSES = [
+    "Not Started",
+    "In Progress",
+    "Completed"
+]
 
 
 # -----------------------------
@@ -28,12 +39,12 @@ def handle_runtime_error(error):
 # FILE HANDLING FUNCTIONS
 # -----------------------------
 
-# Read courses from JSON file
 def load_courses():
     try:
         if not os.path.exists(DATA_FILE):
             with open(DATA_FILE, "w", encoding="utf-8") as file:
                 json.dump([], file)
+
             return []
 
         with open(DATA_FILE, "r", encoding="utf-8") as file:
@@ -51,7 +62,6 @@ def load_courses():
         raise RuntimeError("Unable to read course data")
 
 
-# Save courses into JSON file
 def save_courses(courses):
     try:
         with open(DATA_FILE, "w", encoding="utf-8") as file:
@@ -78,6 +88,7 @@ def validate_course(data):
     ]
 
     for field in required_fields:
+
         if field not in data:
             return f"{field} is required"
 
@@ -118,6 +129,7 @@ def home():
 
 @app.route("/api/courses", methods=["GET"])
 def get_courses():
+
     courses = load_courses()
 
     return jsonify(courses), 200
@@ -129,9 +141,11 @@ def get_courses():
 
 @app.route("/api/courses/<int:course_id>", methods=["GET"])
 def get_course(course_id):
+
     courses = load_courses()
 
     for course in courses:
+
         if course["id"] == course_id:
             return jsonify(course), 200
 
@@ -146,12 +160,15 @@ def get_course(course_id):
 
 @app.route("/api/courses", methods=["POST"])
 def create_course():
+
     data = request.get_json(silent=True)
 
     error = validate_course(data)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({
+            "error": error
+        }), 400
 
     courses = load_courses()
 
@@ -181,16 +198,20 @@ def create_course():
 
 @app.route("/api/courses/<int:course_id>", methods=["PUT"])
 def update_course(course_id):
+
     data = request.get_json(silent=True)
 
     error = validate_course(data)
 
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({
+            "error": error
+        }), 400
 
     courses = load_courses()
 
     for course in courses:
+
         if course["id"] == course_id:
 
             course["course_name"] = data["course_name"].strip()
@@ -213,9 +234,11 @@ def update_course(course_id):
 
 @app.route("/api/courses/<int:course_id>", methods=["DELETE"])
 def delete_course(course_id):
+
     courses = load_courses()
 
     for course in courses:
+
         if course["id"] == course_id:
 
             courses.remove(course)
@@ -236,5 +259,7 @@ def delete_course(course_id):
 # -----------------------------
 
 if __name__ == "__main__":
+
     print("CodeCraftHub API is starting...")
+
     app.run(debug=True)
